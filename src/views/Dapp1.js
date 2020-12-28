@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Web3 from 'web3'
 import { Row, Col, Card, Divider, Input, Form, Button, Select } from 'antd'
 
-import token from "../sdk/TK1/frontend"
+import token from "../sdk/TK1/index"
 
 const tokenSymbol = "TK1"
 const { Option } = Select;
