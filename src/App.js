@@ -7,8 +7,7 @@ import {
   Link
 } from "react-router-dom";
 
-import Dapp1 from './views/Dapp1'
-import Dapp2 from './views/Dapp2'
+import Dapp from './views/Dapp'
 import 'antd/dist/antd.css';
 
 function App() {
@@ -17,22 +16,14 @@ function App() {
     <Router>
 
       <Switch>
-        <Route path="/dapp1">
-          <Dapp1 />
-        </Route>
-        <Route path="/dapp2">
-          <Dapp2 />
-        </Route>
         <Route path="/">
-          <Home />
+          <Dapp />
         </Route>
       </Switch>
 
     </Router>
   );
 }
-const Home = props => {
-  return "home"
-}
+
 
 export default App;

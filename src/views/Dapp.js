@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react'
 import Web3 from 'web3'
 import { Row, Col, Card, Divider, Input, Form, Button, Select } from 'antd'
 
-import token from "../sdk/TK2/index"
-
-const tokenSymbol = "TK2"
-
+import token from "../sdk/index"
 
 const { Option } = Select;
 
-const Dapp1 = (props) => {
+
+const Dapp1 = () => {
+    const [tokenSymbol, setTokenSymbol] = useState('')
     const [acc, setAcc] = useState("")
     const [eth, setETH] = useState(0)
     const [balance, setBalance] = useState(0)
@@ -27,56 +26,89 @@ const Dapp1 = (props) => {
     useEffect(() => {
         const enable = ethEnabled()
         if (enable) {
-            window.web3.eth.getAccounts().then(res => {
-                console.log("🚀 ~ file: Dapp1.js ~ line 11 ~ useEffect ~ res", res)
-                setAcc(res[0])
-
-                window.web3.eth.getBalance(res[0])
-                    .then(res1 => {
-                        console.log("🚀 ~ file: Dapp1.js ~ line 16 ~ window.web3.eth.getAccounts ~ res1", res1)
-                        setETH(window.web3.utils.fromWei(res1))
-                    })
-                const tkContract = new token(window.web3)
-                setContract(tkContract)
-                tkContract.balanceOf(res[0])
-                    .then(tkBalance => {
-                        console.log("🚀 ~ file: Dapp1.js ~ line 28 ~ window.web3.eth.getAccounts ~ tkBalance", tkBalance)
-                        tkContract.decimals()
-                            .then(decimal => {
-                                setDecimal(decimal);
-                                setBalance(tkBalance / Math.pow(10, decimal))
-                            })
-                    })
-
-                tkContract.getListVchainToken()
-                    .then(res => {
-                        setListToken(res.slice(1, res.length).filter(i => i != tokenSymbol))
-                    })
-                tkContract.getListSwap()
-                    .then(res2 => {
-                        const temp = res2.slice(1, res2.length).filter(i => {
-                            if (i.tkApay != tokenSymbol) return false;
-                            if (i.userA != res[0]) return false
-                            return true
-                        })
-                        setListSend(temp)
-                        const temp2 = res2.slice(1, res2.length).filter(i => {
-                            if (i.tkAwant != tokenSymbol) return false;
-                            if (i.userB != res[0]) return false
-                            return true
-                        })
-                        setListReceiver(temp2)
-                        console.log(temp2)
-                    })
-            })
+            fetchData()
         }
     }, [])
 
+    const fetchData = async () => {
+        const tkContract = new token(window.web3)
+        setContract(tkContract)
+        const listAccMetamask = await window.web3.eth.getAccounts();
+        setAcc(listAccMetamask[0])
+        const symbol = await tkContract.symbol()
+        tkContract.getListVchainToken()
+            .then(res2 => {
+                setListToken(res2.slice(1, res2.length).filter(i => i != symbol))
+            })
+        setTokenSymbol(symbol)
+        const decimal = await tkContract.decimals()
+        setDecimal(decimal)
+
+        window.web3.eth.getBalance(listAccMetamask[0])
+            .then(res1 => {
+                // console.log("🚀 ~ file: Dapp1.js ~ line 16 ~ window.web3.eth.getAccounts ~ res1", res1)
+                setETH(window.web3.utils.fromWei(res1))
+            })
+
+        tkContract.balanceOf(listAccMetamask[0])
+            .then(tkBalance => {
+                // console.log("🚀 ~ file: Dapp1.js ~ line 28 ~ window.web3.eth.getAccounts ~ tkBalance", tkBalance)
+                setBalance(tkBalance / Math.pow(10, decimal))
+            })
+
+        tkContract.getListSwap()
+            .then(res2 => {
+                // console.log(res2)
+                const temp = res2.slice(1, res2.length).filter(i => {
+                    if (i.tkApay != symbol) return false;
+                    if (i.userA != listAccMetamask[0]) return false
+                    return true
+                })
+                setListSend(temp)
+                const temp2 = res2.slice(1, res2.length).filter(i => {
+                    if (i.tkAwant != symbol) return false;
+                    if (i.userB != listAccMetamask[0]) return false
+                    return true
+                })
+                setListReceiver(temp2)
+                // console.log(temp2)
+            })
+
+        window.ethereum.on('accountsChanged', (accounts) => {
+            setAcc(accounts[0])
+            tkContract.balanceOf(accounts[0])
+                .then(tkBalance => {
+                    // console.log("🚀 ~ file: Dapp1.js ~ line 28 ~ window.web3.eth.getAccounts ~ tkBalance", tkBalance)
+                    setBalance(tkBalance / Math.pow(10, decimal))
+                })
+            window.web3.eth.getBalance(accounts[0])
+                .then(e => {
+                    setETH(window.web3.utils.fromWei(e))
+                })
+        });
+
+        window.ethereum.on('chainChanged', (chainId) => {
+            // setNetId(res.utils.hexToNumber(chainId))
+            window.web3.eth.getAccounts().then(listAcc => {
+                window.web3.eth.getBalance(listAcc[0])
+                    .then(e => {
+                        setETH(window.web3.utils.fromWei(e))
+                    })
+
+                tkContract.balanceOf(listAcc[0])
+                    .then(tkBalance => {
+                        // console.log("🚀 ~ file: Dapp1.js ~ line 28 ~ window.web3.eth.getAccounts ~ tkBalance", tkBalance)
+                        setBalance(tkBalance / Math.pow(10, decimal))
+                    })
+
+
+            })
+        });
+    }
 
     const ethEnabled = () => {
         if (window.ethereum) {
             window.web3 = new Web3(window.ethereum);
-
             window.ethereum.enable();
             return true;
         }
@@ -99,41 +131,48 @@ const Dapp1 = (props) => {
         setAmount2(e.target.value)
     }
 
-    const onSendToken = e => {
-        console.log(receiver, amount * Math.pow(10, decimal))
-        contract.transfer(receiver, amount * Math.pow(10, decimal) + "", acc)
-            .then(res => {
-                console.log(res)
-                alert("transfer success")
-            })
+
+
+    const onSendToken = async e => {
+        // console.log(receiver, amount * Math.pow(10, decimal))
+        await contract.transfer(receiver, amount * Math.pow(10, decimal) + "", acc)
+        // alert("transfer success"      
     }
 
     const onSelectToken = e => {
-        console.log(e)
+        // console.log(e)
         setSelectedSwapToken(e)
     }
     const onCreateSwapRequest = (e) => {
         contract.userCreateSwap(receiver2, selectedSwapToken, amount2 * Math.pow(10, decimal) + "", acc)
             .then(res => {
                 console.log(res)
-                alert('create request swap success')
+                // alert('create request swap success')
             })
     }
 
-    const onExecSwap  = (e) => {
+    const onExecSwap = (e) => {
         contract.useAcceptSwap(e.userA, acc)
-        .then(res => {
-            console.log(res)
-            alert("swap success")
-        })
+            .then(res => {
+                console.log(res)
+                // alert("swap success")
+            })
     }
 
     const onDenySwap = (e) => {
         contract.userDenySwap(e.userA, acc)
-        .then(res => {
-            console.log(res)
-            alert("deny swap success")
-        })
+            .then(res => {
+                console.log(res)
+                // alert("deny swap success")
+            })
+    }
+
+    const onDeleteSwap = (e) => {
+        contract.userDeleteSwap(e.userB, e.tkAwant, acc)
+            .then(res => {
+                console.log(res)
+                // alert('delete swap success')
+            })
     }
 
     return <React.Fragment>
@@ -161,7 +200,7 @@ const Dapp1 = (props) => {
                         <Col span={12}>
 
                             <div className="text-center">
-                                <img width="50px" height="50px" src="images/no-image.png" />
+                                <img width="50px" height="50px" src="images/no-image.png" style={{ borderRadius: '50%' }} />
                             </div>
                             <div className="text-center">
                                 <h3>{balance} {tokenSymbol}</h3>
@@ -174,11 +213,12 @@ const Dapp1 = (props) => {
                     <br />
                     <div>
                         <h4> Send inside {tokenSymbol}</h4>
-                        <Row>
+                        <Row >
                             <Col md={16} className="pr-1">
                                 <Form.Item
                                     label="Receiver"
                                     name="receiver"
+                                    className="mb-1"
                                 >
                                     <Input
                                         placeholder="Receiver's address"
@@ -189,20 +229,19 @@ const Dapp1 = (props) => {
 
                             </Col>
                             <Col md={8}>
-                                <Form.Item
+                                {/* <Form.Item
                                     label={`Amount ${tokenSymbol}`}
                                     name="amount"
-                                >
-                                    <Input
-                                        placeholder={`${tokenSymbol} to send`}
-                                        type="number"
-                                        value={amount}
-                                        onChange={onChangeAmount}
-                                    />
-                                </Form.Item>
+                                > */}
+                                <Input
+                                    placeholder={`${tokenSymbol} to send`}
+                                    type="number"
+                                    value={amount}
+                                    onChange={onChangeAmount}
+                                />
+                                {/* </Form.Item> */}
 
                             </Col>
-
                         </Row>
                         <Button
                             type="primary"
@@ -218,6 +257,7 @@ const Dapp1 = (props) => {
                             <Form.Item
                                 label="Receiver"
                                 name="receiver2"
+                                className="mb-1"
                             >
                                 <Input
                                     placeholder="Address to swap token"
@@ -242,6 +282,7 @@ const Dapp1 = (props) => {
                             <Form.Item
                                 label="Amount"
                                 name="amount2"
+                                className="mb-1"
                             >
                                 <Input
                                     placeholder={`Amount token ${selectedSwapToken} want to have`}
@@ -264,10 +305,21 @@ const Dapp1 = (props) => {
                         listSend.map((i, idx) => <Card key={idx}>
                             <div className="d-flex justify-content-between">
                                 <div>
-                                    To:  {i.userB}
+                                    <div>
+                                        To:  {i.userB}
+                                    </div>
+                                    <div>
+                                        <div> To get token {i.tkAwant}</div>
+                                        <div>Value {i.value}</div>
+                                    </div>
                                 </div>
+
                                 <div>
-                                    To get token {i.tkAwant}
+                                    <Button
+                                        danger
+                                        onClick={() => onDeleteSwap(i)}>
+                                        Remove request
+                                    </Button>
                                 </div>
                             </div>
 
@@ -282,27 +334,28 @@ const Dapp1 = (props) => {
                         listReceiver.map((i, idx) => <Card key={idx}>
                             <div className="d-flex justify-content-between">
                                 <div>
-                                    <div> From:  {i.userA}</div>
-                                    <div>Value {i.value}</div>
-                                </div>
-                                <div>
-                                    Pay by token {i.tkApay}
+                                    <div>
+                                        <div> From:  {i.userA}</div>
+                                        <div>Value {i.value}</div>
+                                    </div>
+                                    <div>
+                                        Pay by token {i.tkApay}
+                                    </div>
                                 </div>
                                 <div>
                                     <Button
-                                        onClick={()=>onExecSwap(i)}
+                                        onClick={() => onExecSwap(i)}
                                         className="mr-2"
                                         type="primary"
                                     >
                                         Swap
                                     </Button>
                                     <Button
-                                        onClick={()=>onDenySwap(i)}
+                                        onClick={() => onDenySwap(i)}
                                         danger>
                                         Deny
                                     </Button>
                                 </div>
-
                             </div>
 
                         </Card>)
