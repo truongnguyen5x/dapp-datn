@@ -100,8 +100,6 @@ const Dapp1 = () => {
                         // console.log("🚀 ~ file: Dapp1.js ~ line 28 ~ window.web3.eth.getAccounts ~ tkBalance", tkBalance)
                         setBalance(tkBalance / Math.pow(10, decimal))
                     })
-
-
             })
         });
     }
@@ -135,7 +133,11 @@ const Dapp1 = () => {
 
     const onSendToken = async e => {
         // console.log(receiver, amount * Math.pow(10, decimal))
-        await contract.transfer(receiver, amount * Math.pow(10, decimal) + "", acc)
+        contract.transfer(receiver, amount * Math.pow(10, decimal) + "", acc)
+        .then()
+        .catch(err => {
+            alert(err)
+        })
         // alert("transfer success"      
     }
 
@@ -149,6 +151,9 @@ const Dapp1 = () => {
                 console.log(res)
                 // alert('create request swap success')
             })
+            .catch(err => {
+                alert(err)
+            })
     }
 
     const onExecSwap = (e) => {
@@ -156,6 +161,9 @@ const Dapp1 = () => {
             .then(res => {
                 console.log(res)
                 // alert("swap success")
+            })
+            .catch(err => {
+                alert(err)
             })
     }
 
@@ -165,6 +173,9 @@ const Dapp1 = () => {
                 console.log(res)
                 // alert("deny swap success")
             })
+            .catch(err => {
+                alert(err)
+            })
     }
 
     const onDeleteSwap = (e) => {
@@ -172,6 +183,9 @@ const Dapp1 = () => {
             .then(res => {
                 console.log(res)
                 // alert('delete swap success')
+            })
+            .catch(err => {
+                alert(err)
             })
     }
 
@@ -249,116 +263,123 @@ const Dapp1 = () => {
                             Send {amount} {tokenSymbol}
                         </Button>
                     </div>
-                    <Divider />
-                    <br />
-                    <h4> Swap  {selectedSwapToken ? `vs ${selectedSwapToken}` : ` token`}</h4>
-                    <Row>
-                        <Col md={16}>
-                            <Form.Item
-                                label="Receiver"
-                                name="receiver2"
-                                className="mb-1"
-                            >
-                                <Input
-                                    placeholder="Address to swap token"
-                                    value={receiver2}
-                                    onChange={onChangeReceiver2}
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col md={8} className="pl-2" >
-                            <Select
-                                placeholder="Token to swap"
-                                style={{ width: "100%" }}
-                                onSelect={onSelectToken}>
-                                {listToken.map((i, idx) => <Option value={i} key={idx}>
-                                    {i}
-                                </Option>)}
-                            </Select>
-                        </Col>
-                    </Row>
-                    <Row>
-                        <Col md={12}>
-                            <Form.Item
-                                label="Amount"
-                                name="amount2"
-                                className="mb-1"
-                            >
-                                <Input
-                                    placeholder={`Amount token ${selectedSwapToken} want to have`}
-                                    value={amount2}
-                                    onChange={onChangeAmount2}
-                                />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Button
-                        type="primary"
-                        onClick={onCreateSwapRequest}
-                    >
-                        Reques to swap
+                    {listToken.length > 0 && <React.Fragment>
+
+                        <Divider />
+                        <br />
+                        <h4> Swap  {selectedSwapToken ? `vs ${selectedSwapToken}` : ` token`}</h4>
+                        <Row>
+                            <Col md={16}>
+                                <Form.Item
+                                    label="Receiver"
+                                    name="receiver2"
+                                    className="mb-1"
+                                >
+                                    <Input
+                                        placeholder="Address to swap token"
+                                        value={receiver2}
+                                        onChange={onChangeReceiver2}
+                                    />
+                                </Form.Item>
+                            </Col>
+                            <Col md={8} className="pl-2" >
+                                <Select
+                                    placeholder="Token to swap"
+                                    style={{ width: "100%" }}
+                                    onSelect={onSelectToken}>
+                                    {listToken.map((i, idx) => <Option value={i} key={idx}>
+                                        {i}
+                                    </Option>)}
+                                </Select>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col md={12}>
+                                <Form.Item
+                                    label="Amount"
+                                    name="amount2"
+                                    className="mb-1"
+                                >
+                                    <Input
+                                        placeholder={`Amount token ${selectedSwapToken} want to have`}
+                                        value={amount2}
+                                        onChange={onChangeAmount2}
+                                    />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        <Button
+                            type="primary"
+                            onClick={onCreateSwapRequest}
+                        >
+                            Reques to swap
                     </Button>
-                    <Divider />
-                    <br />
-                    <h4>My list send request swap</h4>
-                    {
-                        listSend.map((i, idx) => <Card key={idx}>
-                            <div className="d-flex justify-content-between">
-                                <div>
+                        <Divider />
+                        <br />
+                        <h4>My list send request swap</h4>
+                        {
+                            listSend.map((i, idx) => <Card key={idx}>
+                                <div className="d-flex justify-content-between">
                                     <div>
-                                        To:  {i.userB}
+                                        <div>
+                                            To:  {i.userB}
+                                        </div>
+                                        <div>
+                                            <div> To get token {i.tkAwant}</div>
+                                            <div>Value {i.value}</div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div> To get token {i.tkAwant}</div>
-                                        <div>Value {i.value}</div>
-                                    </div>
-                                </div>
 
-                                <div>
-                                    <Button
-                                        danger
-                                        onClick={() => onDeleteSwap(i)}>
-                                        Remove request
+                                    <div>
+                                        <Button
+                                            danger
+                                            onClick={() => onDeleteSwap(i)}>
+                                            Remove request
                                     </Button>
-                                </div>
-                            </div>
-
-                        </Card>)
-                    }
-
-                    <Divider />
-                    <br />
-
-                    <h4>My list request swap incoming </h4>
-                    {
-                        listReceiver.map((i, idx) => <Card key={idx}>
-                            <div className="d-flex justify-content-between">
-                                <div>
-                                    <div>
-                                        <div> From:  {i.userA}</div>
-                                        <div>Value {i.value}</div>
-                                    </div>
-                                    <div>
-                                        Pay by token {i.tkApay}
                                     </div>
                                 </div>
-                                <div>
-                                    <Button
-                                        onClick={() => onExecSwap(i)}
-                                        className="mr-2"
-                                        type="primary"
-                                    >
-                                        Swap
-                                    </Button>
-                                    <Button
-                                        onClick={() => onDenySwap(i)}
-                                        danger>
-                                        Deny
-                                    </Button>
-                                </div>
-                            </div>
 
-                        </Card>)
+                            </Card>)
+                        }
+
+                        <Divider />
+                        <br />
+
+                        <h4>My list request swap incoming </h4>
+                        {
+                            listReceiver.map((i, idx) => <Card key={idx}>
+                                <div className="d-flex justify-content-between">
+                                    <div>
+                                        <div>
+                                            <div> From:  {i.userA}</div>
+                                            <div>Value {i.value}</div>
+                                        </div>
+                                        <div>
+                                            Pay by token {i.tkApay}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Button
+                                            onClick={() => onExecSwap(i)}
+                                            className="mr-2"
+                                            type="primary"
+                                        >
+                                            Swap
+                                    </Button>
+                                        <Button
+                                            onClick={() => onDenySwap(i)}
+                                            danger>
+                                            Deny
+                                    </Button>
+                                    </div>
+                                </div>
+
+                            </Card>)
+                        }
+
+
+                    </React.Fragment>
+
                     }
 
                 </Card>
